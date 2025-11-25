@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import nlp_engine
+import search_engine
 
 app = FastAPI(title="Truth Seeker API")
 
@@ -18,6 +19,10 @@ app.add_middleware(
 class AnalysisRequest(BaseModel):
     text: str
 
+class ExpandRequest(BaseModel):
+    node_label: str
+    context: Optional[str] = ""
+
 class Node(BaseModel):
     id: str
     label: str
@@ -28,6 +33,7 @@ class Edge(BaseModel):
     source: str
     target: str
     label: str
+    details: Optional[str] = ""
 
 class GraphData(BaseModel):
     nodes: List[Node]
@@ -42,6 +48,15 @@ async def analyze_case(request: AnalysisRequest):
     try:
         graph_data = nlp_engine.analyze_text(request.text)
         print("graph_data",graph_data)
+        return graph_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/expand", response_model=GraphData)
+async def expand_node(request: ExpandRequest):
+    try:
+        print(f"Expanding node: {request.node_label}")
+        graph_data = search_engine.search_and_extract(request.node_label, request.context)
         return graph_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

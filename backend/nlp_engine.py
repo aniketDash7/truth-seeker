@@ -23,7 +23,8 @@ def analyze_text(text: str) -> Dict[str, Any]:
     "edges" should be a list of objects with:
     - "source": id of the source node
     - "target": id of the target node
-    - "label": description of the relationship (e.g., "visited", "knows", "occurred at")
+    - "label": short relationship name (e.g., "visited", "knows")
+    - "details": detailed explanation of the relationship (e.g., "visited on Jan 5th according to witness", "alleged father of based on court docs")
     
     Text to analyze:
     "{text}"
@@ -46,16 +47,31 @@ def analyze_text(text: str) -> Dict[str, Any]:
             content = content.replace("```", "")
             
         start_idx = content.find('{')
-        end_idx = content.rfind('}') + 1
-        if start_idx != -1 and end_idx != -1:
+        nodes_idx = content.find('"nodes"')
+        
+        # Check if "nodes" key appears before the first curly brace (implies missing outer braces)
+        if nodes_idx != -1 and (start_idx == -1 or nodes_idx < start_idx):
+            # Model forgot outer braces, start from "nodes"
+            # Find the last closing character, could be } or ]
+            end_idx = max(content.rfind('}'), content.rfind(']')) + 1
+            json_str = "{" + content[nodes_idx:end_idx] + "}"
+        elif start_idx != -1:
+            # Standard case: found an opening brace
+            end_idx = content.rfind('}') + 1
             json_str = content[start_idx:end_idx]
+        else:
+            # No braces and no "nodes" key found
+            raise ValueError("Could not find JSON structure in model output")
+
+        try:
             # print(f"DEBUG: Raw model output: {content}")
             print(f"DEBUG: Extracted JSON string: {json_str}")
-            data = json.loads(json_str)
-            return data
-
-        else:
-            raise ValueError("Could not parse JSON from model output")
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            # Fallback for single quotes (common LLM issue)
+            import ast
+            print(f"DEBUG: JSONDecodeError, attempting ast.literal_eval for: {json_str}")
+            return ast.literal_eval(json_str)
 
     except Exception as e:
         print(f"Error in NLP processing: {e}")
