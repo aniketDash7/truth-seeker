@@ -4,7 +4,8 @@
 
 Users can further explore the graph by expanding nodes using real-time web search to uncover hidden connections.
 
-![Truth Seeker Screenshot](https://via.placeholder.com/800x450?text=Truth+Seeker+Dashboard)
+<img width="1829" height="865" alt="image" src="https://github.com/user-attachments/assets/36b2f8d9-6c12-423b-80b5-fa5b5c9cfeb3" />
+
 
 ## ✨ Features
 
